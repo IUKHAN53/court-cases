@@ -144,4 +144,4 @@ async def filters(db: AsyncSession = Depends(get_db)) -> FiltersResponse:
 async def health() -> dict:
     from ..config import settings
 
-    return {"status": "ok", "seed": settings.seed_on_startup}
+    return {"status": "ok", "seed": settings.seed_on_startup, "build": "normalize-1"}

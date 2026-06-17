@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import crud
 from .models import Case
+from .normalize import normalize_city, normalize_status, normalize_wing
 
 # Map of normalized (lowercased, stripped) source header -> model field.
 HEADER_MAP: Dict[str, str] = {
@@ -215,6 +216,11 @@ def rows_from_dataframe(
                 if "next_hearing_date" in colmap
                 else None
             )
+
+            # Canonicalize messy free-text values so reports group cleanly.
+            record["wing"] = normalize_wing(record["wing"])
+            record["city"] = normalize_city(record["city"])
+            record["status"] = normalize_status(record["status"])
 
             valid.append(record)
         except Exception as exc:  # pragma: no cover - defensive per-row guard

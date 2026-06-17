@@ -65,6 +65,14 @@ export function ChartCard({
 
 export function StatusDonut({ data }: { data: LabelCount[] }) {
   const total = data.reduce((s, d) => s + d.count, 0);
+  const TOP = 8;
+  const sorted = [...data].sort((a, b) => b.count - a.count);
+  let display = sorted;
+  if (sorted.length > TOP) {
+    const other = sorted.slice(TOP).reduce((s, d) => s + d.count, 0);
+    display = [...sorted.slice(0, TOP), { label: "Other", count: other }];
+  }
+  data = display;
   return (
     <div className="flex flex-col items-center gap-5 sm:flex-row">
       <div className="relative h-[180px] w-[180px] shrink-0">
