@@ -46,27 +46,39 @@ Open http://localhost:3000.
 
 ---
 
-## Deploy (free tier): Neon + Render + Vercel
+## Live deployment
+
+| Piece | URL | Host |
+|---|---|---|
+| Frontend (Next.js) | https://court-cases.vercel.app | Vercel |
+| Backend API (FastAPI) | https://court-cases-api.vercel.app | Vercel (Python serverless) |
+| Database | — | Neon (Postgres, free) |
+
+Everything is on **Vercel + Neon** (all free tier, no credit card). The repo is a
+monorepo deployed as **two Vercel projects** from the same GitHub repo.
 
 ### Database — Neon
-1. Create a project at neon.tech → copy the **pooled** connection string.
-2. Use the `postgresql+asyncpg://...` form (the backend normalizes `postgres://` too).
+- A Neon Postgres project supplies the **pooled** connection string. The backend
+  normalizes `postgres://` → `postgresql+asyncpg://` and handles `sslmode`/`channel_binding`
+  automatically.
 
-### Backend — Render
-- New **Web Service**, root directory `backend`.
-- Build: `pip install -r requirements.txt`
-- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Env vars:
-  - `DATABASE_URL` = your Neon connection string
-  - `CORS_ORIGINS` = your Vercel URL, e.g. `https://courttrack.vercel.app`
-- (A `render.yaml` is included for one-click setup.)
+### Backend — Vercel (`court-cases-api`)
+- Root directory `backend`; preset **FastAPI**.
+- Served as a Python serverless function via [`backend/api/index.py`](backend/api/index.py)
+  + [`backend/vercel.json`](backend/vercel.json) (`@vercel/python`).
+- Tables are created and seeded **lazily on the first request** (Vercel does not run the
+  ASGI lifespan), so no manual migration step is needed.
+- Env var: `DATABASE_URL` = the Neon pooled connection string.
 
-### Frontend — Vercel
-- Import the repo, root directory `frontend` (auto-detected as Next.js).
-- Env var: `NEXT_PUBLIC_API_URL` = your Render backend URL.
+### Frontend — Vercel (`court-cases`)
+- Root directory `frontend`; auto-detected as Next.js.
+- Env var: `NEXT_PUBLIC_API_URL` = `https://court-cases-api.vercel.app`.
 
-> ⚠️ Render's free web service cold-starts after ~15 min idle. Hit the URL once to warm
-> it before a live demo, or host the backend on Koyeb (no spin-down).
+> ℹ️ Both projects auto-deploy on every push to `main`. Neon scales to zero when idle
+> but wakes in milliseconds; serverless functions cold-start in ~1–2s.
+
+A `render.yaml` is also included if you prefer to host the backend on Render instead
+(note: Render requires credit-card identity verification before creating services).
 
 ---
 
