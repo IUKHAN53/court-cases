@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: court-cases-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # Leave DATABASE_URL unset to use the bundled SQLite DB, or paste a
+      # Neon/Postgres connection string here. postgres:// URLs are normalized
+      # to postgresql+asyncpg:// automatically.
+      - key: DATABASE_URL
+        sync: false
+      # Comma-separated allowed origins. Defaults to "http://localhost:3000,*".
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SEED_ON_STARTUP
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.12.4"

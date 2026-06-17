@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy>=2
+aiosqlite
+asyncpg
+pydantic>=2
+pydantic-settings
+pandas
+openpyxl
+python-multipart

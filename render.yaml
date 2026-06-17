@@ -1,0 +1,23 @@
+# Render Blueprint (read from the repo root). Deploys the FastAPI backend.
+# In the Render dashboard: New + → Blueprint → connect IUKHAN53/court-cases.
+services:
+  - type: web
+    name: court-cases-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # Paste your Neon pooled connection string here at deploy time.
+      # postgres:// URLs are normalized to postgresql+asyncpg:// automatically.
+      - key: DATABASE_URL
+        sync: false
+      # Set to your Vercel URL once the frontend is deployed, e.g.
+      # https://court-cases.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SEED_ON_STARTUP
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.12.4"
