@@ -7,9 +7,11 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import crud
+from .models import Case
 
 # Map of normalized (lowercased, stripped) source header -> model field.
 HEADER_MAP: Dict[str, str] = {
@@ -240,20 +242,40 @@ async def import_file(
 
     rows, errors, skipped = rows_from_dataframe(df)
 
+    # Dedupe by the business key (case_number, case_year, city); the last
+    # occurrence in the file wins (matches per-row upsert semantics).
+    deduped: Dict[tuple, Dict[str, Any]] = {}
+    for record in rows:
+        payload = crud._normalize_payload(record)
+        payload.setdefault("court", "High Court")
+        payload.setdefault("status", "Pending")
+        payload.setdefault("city", "")
+        key = (payload["case_number"], payload["case_year"], payload.get("city") or "")
+        deduped[key] = payload
+
+    # Load existing rows once (avoids a SELECT per row — important for large
+    # files on serverless where per-row round-trips would blow the time limit).
+    existing: Dict[tuple, Case] = {}
+    if deduped:
+        result = await db.execute(select(Case))
+        for case in result.scalars():
+            existing[(case.case_number, case.case_year, case.city or "")] = case
+
     inserted = 0
     updated = 0
-    for record in rows:
-        try:
-            result = await crud.upsert_case(db, record, commit=False)
-            if result == "inserted":
-                inserted += 1
-            else:
-                updated += 1
-        except Exception as exc:  # pragma: no cover - defensive
-            errors.append(
-                f"Case {record.get('case_number')}/{record.get('case_year')}: {exc}"
-            )
+    new_cases = []
+    for key, payload in deduped.items():
+        found = existing.get(key)
+        if found is None:
+            new_cases.append(Case(**payload))
+            inserted += 1
+        else:
+            for field, value in payload.items():
+                setattr(found, field, value)
+            updated += 1
 
+    if new_cases:
+        db.add_all(new_cases)
     await db.commit()
 
     return {

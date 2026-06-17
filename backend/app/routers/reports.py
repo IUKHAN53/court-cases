@@ -142,4 +142,6 @@ async def filters(db: AsyncSession = Depends(get_db)) -> FiltersResponse:
 
 @router.get("/health")
 async def health() -> dict:
-    return {"status": "ok"}
+    from ..config import settings
+
+    return {"status": "ok", "seed": settings.seed_on_startup}

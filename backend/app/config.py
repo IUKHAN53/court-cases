@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,*"
 
     # Whether to seed sample/synthetic data on startup if the table is empty.
-    seed_on_startup: bool = True
+    # Off by default so a real dataset is never mixed with demo rows; set
+    # SEED_ON_STARTUP=true (e.g. locally) to populate sample data.
+    seed_on_startup: bool = False
 
     @property
     def cors_origins_list(self) -> List[str]:
