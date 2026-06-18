@@ -131,7 +131,7 @@ function CasesView() {
   async function onExport() {
     try {
       await api.downloadExport({
-        search: debouncedSearch,
+        search: query.search,
         wing: query.wing,
         status: query.status,
         city: query.city,
