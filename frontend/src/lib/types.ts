@@ -70,6 +70,7 @@ export interface CaseQuery {
   court?: string;
   case_year?: number | string;
   deadline?: "upcoming" | "overdue" | "none" | "";
+  active?: string;
   sort?: string;
   order?: "asc" | "desc";
   limit?: number;

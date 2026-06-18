@@ -62,8 +62,8 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* KPI grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-        <StatCard index={0} label="Total Cases" value={s?.total ?? "—"} icon={FolderOpen} hint="All records" />
-        <StatCard index={1} label="Active" value={s?.active ?? "—"} icon={Activity} tone="brand" hint="Not disposed" />
+        <StatCard index={0} label="Total Cases" value={s?.total ?? "—"} icon={FolderOpen} hint="All records" href="/cases" />
+        <StatCard index={1} label="Active" value={s?.active ?? "—"} icon={Activity} tone="brand" hint="Not disposed" href="/cases?active=1" />
         <StatCard
           index={2}
           label="Overdue"
@@ -82,7 +82,7 @@ export default function DashboardPage() {
           hint="Hearings ahead"
           href="/cases?deadline=upcoming"
         />
-        <StatCard index={4} label="Disposed" value={s?.disposed ?? "—"} icon={CheckCircle2} tone="emerald" hint="Closed" />
+        <StatCard index={4} label="Disposed" value={s?.disposed ?? "—"} icon={CheckCircle2} tone="emerald" hint="Closed" href="/cases?active=0" />
       </div>
 
       {/* Alerts + status */}

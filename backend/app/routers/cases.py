@@ -22,6 +22,7 @@ async def list_cases(
     court: Optional[str] = None,
     case_year: Optional[int] = None,
     deadline: Optional[str] = Query(default=None, pattern="^(upcoming|overdue|none)$"),
+    active: Optional[bool] = None,
     sort: str = "next_hearing_date",
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     limit: int = Query(default=50, ge=1, le=1000),
@@ -36,6 +37,7 @@ async def list_cases(
         "court": court,
         "case_year": case_year,
         "deadline": deadline,
+        "active": active,
     }
     rows, total = await crud.list_cases(
         db, filters=filters, sort=sort, order=order, limit=limit, offset=offset

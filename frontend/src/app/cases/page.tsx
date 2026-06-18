@@ -25,6 +25,12 @@ function CasesView() {
     limit: PAGE_SIZE,
     offset: 0,
     deadline: (params.get("deadline") as CaseQuery["deadline"]) || "",
+    status: params.get("status") || "",
+    wing: params.get("wing") || "",
+    city: params.get("city") || "",
+    search: params.get("search") || "",
+    case_year: params.get("case_year") || "",
+    active: params.get("active") || "",
   });
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [data, setData] = useState<CasesResponse>({ items: [], total: 0 });
@@ -129,6 +135,7 @@ function CasesView() {
     city: query.city,
     case_year: query.case_year,
     deadline: query.deadline,
+    active: query.active,
     sort: query.sort,
     order: query.order,
   });

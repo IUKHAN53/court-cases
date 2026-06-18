@@ -39,6 +39,7 @@ async def export_cases(
     court: Optional[str] = None,
     case_year: Optional[int] = None,
     deadline: Optional[str] = Query(default=None, pattern="^(upcoming|overdue|none)$"),
+    active: Optional[bool] = None,
     sort: str = "next_hearing_date",
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
@@ -52,6 +53,7 @@ async def export_cases(
         court=court,
         case_year=case_year,
         deadline=deadline,
+        active=active,
     )
     stmt = apply_sort(stmt, sort, order)
     rows = (await db.execute(stmt)).scalars().all()

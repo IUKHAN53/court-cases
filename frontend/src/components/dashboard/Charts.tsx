@@ -140,7 +140,18 @@ export function HBars({ data, suffix }: { data: LabelCount[]; suffix?: string })
 }
 
 export function YearBars({ data }: { data: LabelCount[] }) {
-  const rows = [...data].sort((a, b) => Number(a.label) - Number(b.label));
+  // Source data has bad entries (e.g. 724, 20252011); keep only plausible
+  // 4-digit years and bucket the rest into "Other" so the axis stays readable.
+  const maxYear = new Date().getFullYear() + 5;
+  const valid: LabelCount[] = [];
+  let other = 0;
+  for (const d of data) {
+    const y = Number(d.label);
+    if (Number.isInteger(y) && y >= 1990 && y <= maxYear) valid.push(d);
+    else other += d.count;
+  }
+  const rows = valid.sort((a, b) => Number(a.label) - Number(b.label));
+  if (other > 0) rows.push({ label: "Other", count: other });
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={rows} margin={{ left: -18, right: 8, top: 8, bottom: 0 }}>

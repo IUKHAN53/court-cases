@@ -15,7 +15,20 @@ import {
 import { api } from "@/lib/api";
 import type { ImportResult } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/Toast";
+
+// SweetAlert2 is dynamically imported so it never touches the DOM during SSR.
+async function showAlert(opts: {
+  icon: "error" | "warning" | "success";
+  title: string;
+  html: string;
+}) {
+  const Swal = (await import("sweetalert2")).default;
+  await Swal.fire({
+    ...opts,
+    confirmButtonColor: "#4f46e5",
+    confirmButtonText: "OK",
+  });
+}
 
 const SAMPLE_CSV =
   "Wing,Case Name,Case #,Case Year,Court,City,Case Title,Status,next date of hearing\n" +
@@ -34,7 +47,6 @@ function downloadSample() {
 }
 
 export default function ImportPage() {
-  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -44,7 +56,11 @@ export default function ImportPage() {
   function pick(f: File | null) {
     if (!f) return;
     if (!/\.(xlsx|xls|csv)$/i.test(f.name)) {
-      toast("Please choose a .xlsx or .csv file", "error");
+      void showAlert({
+        icon: "error",
+        title: "Unsupported file",
+        html: "Please choose an <b>.xlsx</b>, <b>.xls</b> or <b>.csv</b> file.",
+      });
       return;
     }
     setFile(f);
@@ -56,10 +72,38 @@ export default function ImportPage() {
     setBusy(true);
     try {
       const res = await api.importFile(file);
+      const total = res.inserted + res.updated;
+      const colError = res.errors.find((e) =>
+        /missing required column|could not read|no columns|unnamed|worksheet|sheet/i.test(e)
+      );
+      if (total === 0) {
+        setResult(null);
+        await showAlert({
+          icon: "error",
+          title: "Couldn't import this file",
+          html:
+            (colError ? `${colError}<br/><br/>` : "") +
+            "No valid rows were found. Make sure it's an Excel/CSV with these columns:<br/><br/><b>Wing, Case Name, Case #, Case Year, Court, City, Case Title, Status, next date of hearing</b>",
+        });
+        return;
+      }
       setResult(res);
-      toast(`Imported: ${res.inserted} new, ${res.updated} updated`, "success");
+      await showAlert({
+        icon: res.errors.length ? "warning" : "success",
+        title: "Import complete",
+        html:
+          `<b>${res.inserted}</b> added &nbsp;·&nbsp; <b>${res.updated}</b> updated &nbsp;·&nbsp; <b>${res.skipped}</b> skipped` +
+          (res.errors.length
+            ? `<br/><span style="color:#b45309">${res.errors.length} row issue(s) — see details below</span>`
+            : ""),
+      });
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Import failed", "error");
+      setResult(null);
+      await showAlert({
+        icon: "error",
+        title: "Import failed",
+        html: e instanceof Error ? e.message : "Something went wrong uploading the file.",
+      });
     } finally {
       setBusy(false);
     }

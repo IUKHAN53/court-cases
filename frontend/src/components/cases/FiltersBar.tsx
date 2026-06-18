@@ -29,7 +29,15 @@ export function FiltersBar({
   onAdd: () => void;
 }) {
   const hasFilters =
-    query.search || query.wing || query.status || query.city || query.case_year || query.deadline;
+    query.search ||
+    query.wing ||
+    query.status ||
+    query.city ||
+    query.case_year ||
+    query.deadline ||
+    query.active;
+  const activeLabel =
+    query.active === "1" ? "Active only" : query.active === "0" ? "Disposed only" : null;
 
   return (
     <div className="card p-4">
@@ -101,13 +109,26 @@ export function FiltersBar({
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">
+        <span className="flex items-center gap-2 text-xs font-medium text-slate-500">
           {total} case{total === 1 ? "" : "s"} found
+          {activeLabel && (
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 font-semibold text-brand-700 ring-1 ring-inset ring-brand-600/20">
+              {activeLabel}
+            </span>
+          )}
         </span>
         {hasFilters && (
           <button
             onClick={() =>
-              onChange({ search: "", wing: "", status: "", city: "", case_year: "", deadline: "" })
+              onChange({
+                search: "",
+                wing: "",
+                status: "",
+                city: "",
+                case_year: "",
+                deadline: "",
+                active: "",
+              })
             }
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-rose-600"
           >

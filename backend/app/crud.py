@@ -48,11 +48,17 @@ def apply_filters(
     court: Optional[str] = None,
     case_year: Optional[int] = None,
     deadline: Optional[str] = None,
+    active: Optional[bool] = None,
     today: Optional[date] = None,
 ) -> Select:
     """Apply the shared filter set used by list/export/report endpoints."""
     if today is None:
         today = date.today()
+
+    if active is True:
+        stmt = stmt.where(_is_active_clause())
+    elif active is False:
+        stmt = stmt.where(_is_disposed_clause())
 
     if search:
         term = f"%{search.strip().lower()}%"
