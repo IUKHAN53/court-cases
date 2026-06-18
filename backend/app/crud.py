@@ -90,6 +90,14 @@ def apply_filters(
             Case.next_hearing_date >= today,
             Case.next_hearing_date <= horizon,
         )
+    elif deadline == "upcoming7":
+        horizon = today + timedelta(days=7)
+        stmt = stmt.where(
+            _is_active_clause(),
+            Case.next_hearing_date.is_not(None),
+            Case.next_hearing_date >= today,
+            Case.next_hearing_date <= horizon,
+        )
     elif deadline == "overdue":
         stmt = stmt.where(
             _is_active_clause(),

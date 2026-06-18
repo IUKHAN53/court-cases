@@ -9,9 +9,10 @@ from sqlalchemy import case as sa_case
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..auth import require
 from ..crud import _is_active_clause, _is_disposed_clause
 from ..database import get_db
-from ..models import Case
+from ..models import Case, User
 from ..schemas import (
     CaseOut,
     FiltersResponse,
@@ -40,9 +41,13 @@ async def _grouped_counts(db: AsyncSession, column, *, unassigned_label: str | N
 
 
 @router.get("/reports/summary", response_model=SummaryReport)
-async def reports_summary(db: AsyncSession = Depends(get_db)) -> SummaryReport:
+async def reports_summary(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("view_cases")),
+) -> SummaryReport:
     today = date.today()
     horizon = today + timedelta(days=30)
+    horizon7 = today + timedelta(days=7)
 
     # Total / active / disposed in a single pass.
     agg = (
@@ -68,6 +73,17 @@ async def reports_summary(db: AsyncSession = Depends(get_db)) -> SummaryReport:
         )
     ).scalar_one()
 
+    upcoming7_count = (
+        await db.execute(
+            select(func.count()).where(
+                _is_active_clause(),
+                Case.next_hearing_date.is_not(None),
+                Case.next_hearing_date >= today,
+                Case.next_hearing_date <= horizon7,
+            )
+        )
+    ).scalar_one()
+
     overdue_count = (
         await db.execute(
             select(func.count()).where(
@@ -88,6 +104,7 @@ async def reports_summary(db: AsyncSession = Depends(get_db)) -> SummaryReport:
         active=active,
         disposed=disposed,
         upcoming_count=upcoming_count,
+        upcoming7_count=upcoming7_count,
         overdue_count=overdue_count,
         by_status=by_status,
         by_wing=by_wing,
@@ -100,6 +117,7 @@ async def reports_summary(db: AsyncSession = Depends(get_db)) -> SummaryReport:
 async def reports_upcoming(
     days: int = Query(default=30, ge=0, le=3650),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("view_cases")),
 ) -> List[CaseOut]:
     """Active cases that are overdue OR due within ``days``, soonest first."""
     today = date.today()
@@ -118,7 +136,10 @@ async def reports_upcoming(
 
 
 @router.get("/filters", response_model=FiltersResponse)
-async def filters(db: AsyncSession = Depends(get_db)) -> FiltersResponse:
+async def filters(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("view_cases")),
+) -> FiltersResponse:
     async def distinct(column, *, numeric: bool = False):
         stmt = select(column).distinct().where(column.is_not(None))
         rows = (await db.execute(stmt)).scalars().all()
@@ -144,4 +165,4 @@ async def filters(db: AsyncSession = Depends(get_db)) -> FiltersResponse:
 async def health() -> dict:
     from ..config import settings
 
-    return {"status": "ok", "seed": settings.seed_on_startup, "build": "status-map-1"}
+    return {"status": "ok", "seed": settings.seed_on_startup, "build": "auth-1"}

@@ -13,9 +13,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .auth import ensure_secret, seed_default_roles
 from .config import settings
 from .database import async_session, init_db
-from .routers import cases, exports, imports, reports
+from .routers import auth, cases, exports, imports, reports, users
 from .seed import seed_if_empty
 
 logger = logging.getLogger("court_cases")
@@ -33,6 +34,13 @@ async def ensure_ready() -> None:
         if _ready:
             return
         await init_db()
+        # Seed default roles and ensure the JWT secret exists (both idempotent).
+        try:
+            async with async_session() as db:
+                await seed_default_roles(db)
+                await ensure_secret(db)
+        except Exception as exc:  # don't block startup on a transient DB hiccup
+            logger.warning("Auth init deferred: %s", exc)
         if settings.seed_on_startup:
             try:
                 async with async_session() as db:
@@ -75,6 +83,8 @@ app.include_router(cases.router)
 app.include_router(imports.router)
 app.include_router(reports.router)
 app.include_router(exports.router)
+app.include_router(auth.router)
+app.include_router(users.router)
 
 
 @app.get("/")

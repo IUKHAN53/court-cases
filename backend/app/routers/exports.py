@@ -10,9 +10,10 @@ from openpyxl import Workbook
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..auth import require
 from ..crud import apply_filters, apply_sort
 from ..database import get_db
-from ..models import Case
+from ..models import Case, User
 
 router = APIRouter(prefix="/api", tags=["exports"])
 
@@ -38,11 +39,14 @@ async def export_cases(
     city: Optional[str] = None,
     court: Optional[str] = None,
     case_year: Optional[int] = None,
-    deadline: Optional[str] = Query(default=None, pattern="^(upcoming|overdue|none)$"),
+    deadline: Optional[str] = Query(
+        default=None, pattern="^(upcoming|upcoming7|overdue|none)$"
+    ),
     active: Optional[bool] = None,
     sort: str = "next_hearing_date",
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("export_cases")),
 ) -> StreamingResponse:
     stmt = apply_filters(
         select(Case),

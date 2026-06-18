@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Shell } from "@/components/shell/Shell";
+import { AppFrame } from "@/components/shell/AppFrame";
+import { AuthProvider } from "@/lib/auth";
 import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({
@@ -20,9 +21,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
-        <ToastProvider>
-          <Shell>{children}</Shell>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <AppFrame>{children}</AppFrame>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

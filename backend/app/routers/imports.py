@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import importer
+from ..auth import require
 from ..database import get_db
+from ..models import User
 from ..schemas import ImportResult
 
 router = APIRouter(prefix="/api", tags=["imports"])
@@ -15,7 +17,9 @@ _ALLOWED_SUFFIXES = (".xlsx", ".xls", ".csv")
 
 @router.post("/import", response_model=ImportResult)
 async def import_cases(
-    file: UploadFile = File(...), db: AsyncSession = Depends(get_db)
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("import_cases")),
 ) -> ImportResult:
     filename = file.filename or ""
     if not filename.lower().endswith(_ALLOWED_SUFFIXES):

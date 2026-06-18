@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, Menu, Plus } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 const TITLES: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Overview of cases, hearings & deadlines" },
   "/cases": { title: "Cases", subtitle: "Search, add, edit, export & manage cases" },
   "/import": { title: "Import", subtitle: "Bring in cases from an Excel or CSV file" },
+  "/users": { title: "Users & Roles", subtitle: "Manage accounts and permissions" },
 };
 
 function todayLabel() {
@@ -25,6 +27,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const pathname = usePathname();
   const meta = TITLES[pathname] ?? TITLES["/cases"];
   const [alerts, setAlerts] = useState(0);
+  const { can } = useAuth();
 
   useEffect(() => {
     let alive = true;
@@ -72,13 +75,15 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           )}
         </Link>
 
-        <Link
-          href="/cases?new=1"
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-sm font-semibold text-white shadow-glow transition hover:from-brand-500 hover:to-brand-400"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Case</span>
-        </Link>
+        {can("create_cases") && (
+          <Link
+            href="/cases?new=1"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-sm font-semibold text-white shadow-glow transition hover:from-brand-500 hover:to-brand-400"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Case</span>
+          </Link>
+        )}
       </div>
     </header>
   );

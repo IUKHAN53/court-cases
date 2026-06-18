@@ -8,3 +8,5 @@ pydantic-settings
 pandas
 openpyxl
 python-multipart
+pyjwt
+passlib

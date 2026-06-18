@@ -128,17 +128,23 @@ function CasesView() {
   const from = data.total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + PAGE_SIZE, data.total);
 
-  const exportHref = api.exportUrl({
-    search: debouncedSearch,
-    wing: query.wing,
-    status: query.status,
-    city: query.city,
-    case_year: query.case_year,
-    deadline: query.deadline,
-    active: query.active,
-    sort: query.sort,
-    order: query.order,
-  });
+  async function onExport() {
+    try {
+      await api.downloadExport({
+        search: debouncedSearch,
+        wing: query.wing,
+        status: query.status,
+        city: query.city,
+        case_year: query.case_year,
+        deadline: query.deadline,
+        active: query.active,
+        sort: query.sort,
+        order: query.order,
+      });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Export failed", "error");
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -147,7 +153,7 @@ function CasesView() {
         onChange={patch}
         filters={filters}
         total={data.total}
-        exportHref={exportHref}
+        onExport={onExport}
         onAdd={() => {
           setEditing(null);
           setDrawerOpen(true);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  AlarmClock,
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
@@ -61,7 +62,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* KPI grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         <StatCard index={0} label="Total Cases" value={s?.total ?? "—"} icon={FolderOpen} hint="All records" href="/cases" />
         <StatCard index={1} label="Active" value={s?.active ?? "—"} icon={Activity} tone="brand" hint="Not disposed" href="/cases?active=1" />
         <StatCard
@@ -75,14 +76,22 @@ export default function DashboardPage() {
         />
         <StatCard
           index={3}
+          label="Upcoming (7d)"
+          value={s?.upcoming7_count ?? "—"}
+          icon={AlarmClock}
+          tone="gold"
+          hint="Next 7 days"
+          href="/cases?deadline=upcoming7"
+        />
+        <StatCard
+          index={4}
           label="Upcoming (30d)"
           value={s?.upcoming_count ?? "—"}
           icon={CalendarClock}
-          tone="gold"
-          hint="Hearings ahead"
+          hint="Next 30 days"
           href="/cases?deadline=upcoming"
         />
-        <StatCard index={4} label="Disposed" value={s?.disposed ?? "—"} icon={CheckCircle2} tone="emerald" hint="Closed" href="/cases?active=0" />
+        <StatCard index={5} label="Disposed" value={s?.disposed ?? "—"} icon={CheckCircle2} tone="emerald" hint="Closed" href="/cases?active=0" />
       </div>
 
       {/* Alerts + status */}

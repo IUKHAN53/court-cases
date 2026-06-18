@@ -4,14 +4,18 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from sqlalchemy import (
+    JSON,
+    Boolean,
     Date,
     DateTime,
+    ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
 
@@ -53,3 +57,42 @@ class Case(Base):
         default=func.now(),
         onupdate=func.now(),
     )
+
+
+class AppSetting(Base):
+    """Key/value store for runtime settings (e.g. the JWT signing secret)."""
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class Role(Base):
+    """A named set of permission keys."""
+
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # List of permission-key strings, stored as JSON.
+    permissions: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class User(Base):
+    """An application user, with a single assigned role."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    full_name: Mapped[str] = mapped_column(String, nullable=False, default="")
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now(), default=func.now()
+    )
+
+    role: Mapped["Role"] = relationship("Role", lazy="joined")

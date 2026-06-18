@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud
+from ..auth import require
 from ..database import get_db
+from ..models import User
 from ..schemas import CaseCreate, CaseListResponse, CaseOut, CaseUpdate
 
 router = APIRouter(prefix="/api", tags=["cases"])
@@ -21,13 +23,16 @@ async def list_cases(
     city: Optional[str] = None,
     court: Optional[str] = None,
     case_year: Optional[int] = None,
-    deadline: Optional[str] = Query(default=None, pattern="^(upcoming|overdue|none)$"),
+    deadline: Optional[str] = Query(
+        default=None, pattern="^(upcoming|upcoming7|overdue|none)$"
+    ),
     active: Optional[bool] = None,
     sort: str = "next_hearing_date",
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     limit: int = Query(default=50, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("view_cases")),
 ) -> CaseListResponse:
     filters = {
         "search": search,
@@ -47,7 +52,9 @@ async def list_cases(
 
 @router.post("/cases", response_model=CaseOut, status_code=status.HTTP_201_CREATED)
 async def create_case(
-    payload: CaseCreate, db: AsyncSession = Depends(get_db)
+    payload: CaseCreate,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("create_cases")),
 ) -> CaseOut:
     case = await crud.create_case(db, payload.model_dump())
     return CaseOut.model_validate(case)
@@ -55,7 +62,10 @@ async def create_case(
 
 @router.put("/cases/{case_id}", response_model=CaseOut)
 async def update_case(
-    case_id: int, payload: CaseUpdate, db: AsyncSession = Depends(get_db)
+    case_id: int,
+    payload: CaseUpdate,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("edit_cases")),
 ) -> CaseOut:
     case = await crud.get_case(db, case_id)
     if case is None:
@@ -66,7 +76,11 @@ async def update_case(
 
 
 @router.delete("/cases/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_case(case_id: int, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_case(
+    case_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require("delete_cases")),
+) -> None:
     case = await crud.get_case(db, case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")

@@ -96,6 +96,7 @@ class SummaryReport(BaseModel):
     active: int
     disposed: int
     upcoming_count: int
+    upcoming7_count: int
     overdue_count: int
     by_status: List[LabelCount]
     by_wing: List[LabelCount]
@@ -109,3 +110,61 @@ class FiltersResponse(BaseModel):
     cities: List[str]
     courts: List[str]
     years: List[int]
+
+
+# --- Auth & RBAC ------------------------------------------------------------
+
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+
+class BootstrapIn(BaseModel):
+    username: str
+    password: str
+    full_name: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    full_name: str
+    role: str
+    permissions: List[str]
+    is_active: bool
+
+
+class UserCreate(BaseModel):
+    username: str
+    full_name: str
+    password: str
+    role: str
+
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class RoleOut(BaseModel):
+    id: int
+    name: str
+    permissions: List[str]
+    is_system: bool
+
+
+class RoleUpdate(BaseModel):
+    permissions: List[str]
+
+
+class RoleCreate(BaseModel):
+    name: str
+    permissions: List[str]

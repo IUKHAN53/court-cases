@@ -15,6 +15,8 @@ import {
 import { api } from "@/lib/api";
 import type { ImportResult } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { AccessDenied } from "@/components/ui/AccessDenied";
+import { useAuth } from "@/lib/auth";
 
 // SweetAlert2 is dynamically imported so it never touches the DOM during SSR.
 async function showAlert(opts: {
@@ -47,11 +49,14 @@ function downloadSample() {
 }
 
 export default function ImportPage() {
+  const { can } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+
+  if (!can("import_cases")) return <AccessDenied feature="Import" />;
 
   function pick(f: File | null) {
     if (!f) return;

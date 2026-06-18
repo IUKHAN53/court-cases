@@ -3,12 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, Scale, FolderOpen, Upload, X } from "lucide-react";
+import {
+  FolderOpen,
+  LayoutDashboard,
+  LogOut,
+  Scale,
+  ShieldCheck,
+  Upload,
+  Users,
+  X,
+} from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/cases", label: "Cases", icon: FolderOpen },
-  { href: "/import", label: "Import", icon: Upload },
+  { href: "/import", label: "Import", icon: Upload, perm: "import_cases" },
+  { href: "/users", label: "Users & Roles", icon: Users, perm: "manage_users" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -18,9 +29,11 @@ function isActive(pathname: string, href: string) {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { can } = useAuth();
+  const items = NAV.filter((n) => !n.perm || can(n.perm));
   return (
     <nav className="flex flex-col gap-1.5 px-3">
-      {NAV.map(({ href, label, icon: Icon }) => {
+      {items.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href);
         return (
           <Link
@@ -62,6 +75,40 @@ function Brand() {
   );
 }
 
+function UserCard() {
+  const { user, logout } = useAuth();
+  if (!user) return null;
+  const initials = (user.full_name || user.username)
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="m-3 rounded-xl border border-white/5 bg-white/[0.03] p-3">
+      <div className="flex items-center gap-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-white">{user.full_name || user.username}</div>
+          <div className="flex items-center gap-1 text-[11px] font-medium text-brand-300">
+            <ShieldCheck className="h-3 w-3" /> {user.role}
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          aria-label="Sign out"
+          title="Sign out"
+          className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-rose-300"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Panel() {
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#0f172a] to-[#020617]">
@@ -69,14 +116,7 @@ function Panel() {
       <div className="mt-2 flex-1">
         <NavLinks />
       </div>
-      <div className="m-3 rounded-xl border border-white/5 bg-white/[0.03] p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
-          Internal Demo
-        </div>
-        <p className="mt-1 text-xs leading-relaxed text-slate-400">
-          Agriculture Dept. court-case tracking, reporting &amp; deadline alerts.
-        </p>
-      </div>
+      <UserCard />
     </div>
   );
 }
@@ -84,12 +124,10 @@ function Panel() {
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <>
-      {/* Desktop: fixed rail */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] lg:block">
         <Panel />
       </aside>
 
-      {/* Mobile: slide-over */}
       <AnimatePresence>
         {open && (
           <>

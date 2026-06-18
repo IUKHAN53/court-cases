@@ -40,6 +40,7 @@ export interface Summary {
   active: number;
   disposed: number;
   upcoming_count: number;
+  upcoming7_count: number;
   overdue_count: number;
   by_status: LabelCount[];
   by_wing: LabelCount[];
@@ -62,6 +63,41 @@ export interface ImportResult {
   errors: string[];
 }
 
+export interface AuthUser {
+  id: number;
+  username: string;
+  full_name: string;
+  role: string;
+  permissions: string[];
+  is_active: boolean;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: AuthUser;
+}
+
+export interface RoleInfo {
+  id: number;
+  name: string;
+  permissions: string[];
+  is_system: boolean;
+}
+
+export interface RolesResponse {
+  roles: RoleInfo[];
+  all_permissions: { key: string; label: string }[];
+}
+
+export interface UserInput {
+  username?: string;
+  full_name?: string;
+  password?: string;
+  role?: string;
+  is_active?: boolean;
+}
+
 export interface CaseQuery {
   search?: string;
   wing?: string;
@@ -69,7 +105,7 @@ export interface CaseQuery {
   city?: string;
   court?: string;
   case_year?: number | string;
-  deadline?: "upcoming" | "overdue" | "none" | "";
+  deadline?: "upcoming" | "upcoming7" | "overdue" | "none" | "";
   active?: string;
   sort?: string;
   order?: "asc" | "desc";

@@ -5,6 +5,7 @@ import type { CaseRecord, CaseQuery } from "@/lib/types";
 import { caseRef, formatDate, isActiveStatus, statusChip, urgency, URGENCY_STYLES } from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useAuth } from "@/lib/auth";
 
 function SortHeader({
   label,
@@ -71,6 +72,10 @@ export function CasesTable({
   onDelete: (c: CaseRecord) => void;
   onAdd: () => void;
 }) {
+  const { can } = useAuth();
+  const canEdit = can("edit_cases");
+  const canDelete = can("delete_cases");
+  const showActions = canEdit || canDelete;
   return (
     <div className="card overflow-hidden">
       <div className="overflow-x-auto">
@@ -83,14 +88,14 @@ export function CasesTable({
               <th className="px-4 py-3 font-semibold">City</th>
               <SortHeader label="Status" field="status" query={query} onSort={onSort} />
               <SortHeader label="Next Hearing" field="next_hearing_date" query={query} onSort={onSort} />
-              <th className="px-4 py-3 text-right font-semibold">Actions</th>
+              {showActions && <th className="px-4 py-3 text-right font-semibold">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 7 }).map((__, j) => (
+                    {Array.from({ length: showActions ? 7 : 6 }).map((__, j) => (
                       <td key={j} className="px-4 py-4">
                         <div className="skeleton h-4 w-full max-w-[120px]" />
                       </td>
@@ -118,24 +123,30 @@ export function CasesTable({
                     <td className="px-4 py-3">
                       <HearingCell c={c} />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1 opacity-60 transition group-hover:opacity-100">
-                        <button
-                          onClick={() => onEdit(c)}
-                          aria-label="Edit"
-                          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => onDelete(c)}
-                          aria-label="Delete"
-                          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                    {showActions && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1 opacity-60 transition group-hover:opacity-100">
+                          {canEdit && (
+                            <button
+                              onClick={() => onEdit(c)}
+                              aria-label="Edit"
+                              className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => onDelete(c)}
+                              aria-label="Delete"
+                              className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
           </tbody>

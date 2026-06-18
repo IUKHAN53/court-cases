@@ -1,14 +1,16 @@
 "use client";
 
 import { Download, Plus, Search, X } from "lucide-react";
-import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
+import { useAuth } from "@/lib/auth";
 import type { CaseQuery, FiltersData } from "@/lib/types";
 
 const DEADLINE_OPTIONS = [
   { value: "", label: "Any deadline" },
   { value: "overdue", label: "Overdue" },
+  { value: "upcoming7", label: "Upcoming (7d)" },
   { value: "upcoming", label: "Upcoming (30d)" },
   { value: "none", label: "No hearing date" },
 ];
@@ -18,16 +20,19 @@ export function FiltersBar({
   onChange,
   filters,
   total,
-  exportHref,
+  onExport,
   onAdd,
 }: {
   query: CaseQuery;
   onChange: (patch: Partial<CaseQuery>) => void;
   filters: FiltersData | null;
   total: number;
-  exportHref: string;
+  onExport: () => Promise<void> | void;
   onAdd: () => void;
 }) {
+  const { can } = useAuth();
+  const [exporting, setExporting] = useState(false);
+
   const hasFilters =
     query.search ||
     query.wing ||
@@ -38,6 +43,15 @@ export function FiltersBar({
     query.active;
   const activeLabel =
     query.active === "1" ? "Active only" : query.active === "0" ? "Disposed only" : null;
+
+  async function doExport() {
+    setExporting(true);
+    try {
+      await onExport();
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="card p-4">
@@ -52,14 +66,16 @@ export function FiltersBar({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="md" onClick={onAdd}>
-            <Plus className="h-4 w-4" /> Add Case
-          </Button>
-          <Link href={exportHref}>
-            <Button variant="secondary" size="md">
+          {can("create_cases") && (
+            <Button variant="secondary" size="md" onClick={onAdd}>
+              <Plus className="h-4 w-4" /> Add Case
+            </Button>
+          )}
+          {can("export_cases") && (
+            <Button variant="secondary" size="md" onClick={doExport} loading={exporting}>
               <Download className="h-4 w-4" /> Export
             </Button>
-          </Link>
+          )}
         </div>
       </div>
 
